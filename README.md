@@ -11,6 +11,19 @@ A Mac app for VFX and production work, with four tools in one window:
 
 Dark and light mode included.
 
+<table>
+  <tr>
+    <td><img src="docs/screenshots/board-export.png" alt="Board Export tab" width="100%"></td>
+    <td><img src="docs/screenshots/video-downloader.png" alt="Video Downloader tab" width="100%"></td>
+    <td><img src="docs/screenshots/frames-scenes.png" alt="Frames &amp; Scenes tab" width="100%"></td>
+  </tr>
+  <tr>
+    <td align="center">Board Export</td>
+    <td align="center">Video Downloader</td>
+    <td align="center">Frames &amp; Scenes</td>
+  </tr>
+</table>
+
 ## Install
 
 **Download:** open this repo's **Actions** tab, choose **Build DMG**, click **Run workflow**, and when it
@@ -137,6 +150,7 @@ The app itself does not need a system ffmpeg: it downloads one for users who don
 | `scripts/adhoc-sign.js` | electron-builder `afterPack` hook: ad-hoc code-signs the .app so it runs on Apple Silicon. |
 | `installer/` | The small "installer" DMG (launcher script, Info.plist, build script). See [Small installer DMG](#small-installer-dmg). |
 | `build/icon.png`, `build/icon.icns` | App icon. |
+| `docs/screenshots/` | Screenshots used in this README. |
 | `.github/workflows/build.yml` | GitHub Actions: builds the DMGs on a macOS runner. |
 
 ### Architecture
