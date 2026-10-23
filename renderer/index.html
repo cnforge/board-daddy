@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src data:; media-src 'none'">
+<title>Board Daddy</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="drag">
+  <h1>Board<span>Daddy</span></h1>
+  <p>Export any online storyboard or treatment to full-res PDF, images, or text.</p>
+  <label class="theme" title="Toggle dark mode">
+    <span id="themeLabel">Dark mode</span>
+    <input type="checkbox" id="darkMode" checked>
+    <span class="track"></span>
+  </label>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" role="tab" id="tabBtnExport" aria-selected="true" data-tab="export">Board Export</button>
+  <button class="tab" role="tab" id="tabBtnVideo" aria-selected="false" data-tab="video">Video Downloader</button>
+  <button class="tab" role="tab" id="tabBtnFrames" aria-selected="false" data-tab="frames">Frames &amp; Scenes</button>
+  <button class="tab" role="tab" id="tabBtnPitch" aria-selected="false" data-tab="pitch">Pitch Media</button>
+</nav>
+
+<main id="tab-export">
+  <label class="field">
+    <span>Link</span>
+    <input id="url" type="url" placeholder="https://indd.adobe.com/view/…" autofocus spellcheck="false">
+  </label>
+
+  <div class="row">
+    <label class="field grow">
+      <span>Password <em>only if the link is protected</em></span>
+      <input id="password" type="password" placeholder="Leave empty for public links" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="check showpw"><input type="checkbox" id="showPw"> Show</label>
+  </div>
+
+  <div class="row">
+    <label class="field grow">
+      <span>Site type</span>
+      <select id="mode">
+        <option value="auto">Auto-detect</option>
+        <option value="adobe">Adobe Publish Online</option>
+        <option value="paged">Page-by-page viewer (slides)</option>
+        <option value="scroll">Long scrolling page</option>
+      </select>
+    </label>
+    <label class="field grow">
+      <span>Quality</span>
+      <select id="scale">
+        <option value="1">Standard (1×, native size)</option>
+        <option value="2">Retina (2×, larger files)</option>
+      </select>
+    </label>
+  </div>
+
+  <fieldset>
+    <legend>Export</legend>
+    <label class="check"><input type="checkbox" id="fPdf" checked> PDF <em>one page per slide</em></label>
+    <label class="check"><input type="checkbox" id="fPng"> PNG images <em>one file per page</em></label>
+    <label class="check"><input type="checkbox" id="fText"> Text <em>page text as .txt</em></label>
+  </fieldset>
+
+  <details>
+    <summary>Advanced</summary>
+    <div class="row">
+      <label class="field"><span>Width</span><input id="width" type="number" value="1920" min="320" max="4000"></label>
+      <label class="field"><span>Height</span><input id="height" type="number" value="1080" min="240" max="4000"></label>
+      <label class="field"><span>Max pages</span><input id="maxPages" type="number" value="300" min="1" max="1000"></label>
+      <label class="field"><span>Wait per page (s)</span><input id="settle" type="number" value="2.5" min="0.5" max="15" step="0.5"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="autoSize" checked> Auto-detect page size (Adobe)</label>
+  </details>
+
+  <div class="row folder">
+    <label class="field grow"><span>Save to</span><input id="outDir" type="text" readonly></label>
+    <button id="pick" class="ghost">Choose…</button>
+  </div>
+
+  <div class="actions">
+    <button id="go" class="primary">Export</button>
+    <button id="stop" class="ghost" hidden>Cancel</button>
+  </div>
+
+  <section id="progressBox" hidden>
+    <div class="statusline"><span id="statusText">Starting…</span><span id="statusPct"></span></div>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="preview">
+      <div id="screen"><img id="thumb" alt="Live preview of the page being captured"><span id="screenEmpty">Waiting for the first page…</span></div>
+      <div id="strip" aria-label="Captured pages"></div>
+    </div>
+  </section>
+  <pre id="log" aria-live="polite"></pre>
+  <button id="reveal" class="ghost" hidden>Show in Finder</button>
+</main>
+
+<main id="tab-video" hidden>
+  <div class="ytbar">
+    <div class="ytstatus"><span id="ytVersion">Checking yt-dlp…</span><span id="ytFfmpeg"></span></div>
+    <div class="actions"><button id="ytFfInstall" class="ghost" hidden>Install ffmpeg</button><button id="ytUpdate" class="ghost">Update yt-dlp</button></div>
+  </div>
+  <div id="ytSetup" hidden>
+    <div class="statusline"><span id="ytSetupText"></span><span id="ytSetupPct"></span></div>
+    <div class="bar"><div id="ytSetupFill" class="fill"></div></div>
+  </div>
+
+  <label class="field">
+    <span>Video links <em>YouTube, Vimeo, Instagram, TikTok and more, one per line</em></span>
+    <textarea id="ytUrls" rows="4" placeholder="https://www.youtube.com/watch?v=…&#10;https://vimeo.com/…" spellcheck="false"></textarea>
+  </label>
+
+  <div class="row">
+    <label class="field grow">
+      <span>Format</span>
+      <select id="ytQuality">
+        <option value="compat">Best compatible: MP4 H.264, up to 1080p</option>
+        <option value="best">Highest quality: MKV, up to 4K/8K</option>
+        <option value="720">MP4, up to 720p (smaller)</option>
+        <option value="mp3">Audio only: MP3</option>
+        <option value="m4a">Audio only: M4A</option>
+      </select>
+    </label>
+    <label class="field grow">
+      <span>Use browser login <em>for private or login-only videos</em></span>
+      <select id="ytCookies">
+        <option value="">None</option>
+        <option value="safari">Safari</option>
+        <option value="chrome">Chrome</option>
+        <option value="firefox">Firefox</option>
+        <option value="brave">Brave</option>
+        <option value="edge">Edge</option>
+      </select>
+    </label>
+  </div>
+  <label class="check"><input type="checkbox" id="ytPlaylist"> Download the whole playlist when a link points to one</label>
+
+  <div class="row folder">
+    <label class="field grow"><span>Save to</span><input id="ytOutDir" type="text" readonly></label>
+    <button id="ytPick" class="ghost">Choose…</button>
+  </div>
+
+  <div class="actions">
+    <button id="ytGo" class="primary">Download</button>
+    <button id="ytStop" class="ghost" hidden>Cancel</button>
+  </div>
+
+  <section id="ytBox" hidden>
+    <div class="statusline"><span id="ytItem">Starting…</span><span id="ytPct"></span></div>
+    <div class="bar"><div id="ytFill" class="fill"></div></div>
+    <div class="ytcard">
+      <div class="ytthumb"><img id="ytThumb" alt="Video thumbnail"><span id="ytThumbEmpty">Preview</span></div>
+      <div class="ytmeta"><div id="ytTitle" class="yttitle">Waiting…</div><div id="ytSub" class="ytsub"></div><div id="ytSpeed" class="ytsub"></div></div>
+    </div>
+  </section>
+  <pre id="ytLog" aria-live="polite"></pre>
+  <button id="ytReveal" class="ghost" hidden>Show in Finder</button>
+  <p class="legal">Only download videos you own or have permission to save. Sites' terms of use still apply.</p>
+</main>
+<main id="tab-frames" hidden>
+  <div class="ytbar">
+    <div class="ytstatus"><span id="frFfStatus">Checking ffmpeg…</span><span id="frFfSub" class="ffsub">Frame extraction and scene detection need ffmpeg.</span></div>
+    <button id="frFfInstall" class="ghost" hidden>Install ffmpeg</button>
+  </div>
+  <div class="row folder">
+    <label class="field grow"><span>Video file <em>mp4, mov, mkv, mxf and more</em></span><input id="frFile" type="text" readonly placeholder="Choose a video…"></label>
+    <button id="frPickFile" class="ghost">Choose…</button>
+  </div>
+
+  <div class="row">
+    <label class="field grow">
+      <span>Extract</span>
+      <select id="frMode">
+        <option value="scenes">One frame per shot (scene detection)</option>
+        <option value="seconds">A frame every N seconds</option>
+        <option value="frames">A frame every N frames</option>
+      </select>
+    </label>
+    <label class="field grow" id="frPickWrap">
+      <span>Frame from each shot</span>
+      <select id="frPick">
+        <option value="first">First frame</option>
+        <option value="middle">Middle frame</option>
+        <option value="last">Last frame</option>
+      </select>
+    </label>
+    <label class="field" id="frEveryWrap" hidden>
+      <span id="frEveryLabel">Every (seconds)</span>
+      <input id="frEvery" type="number" min="0.04" step="any" value="1">
+    </label>
+  </div>
+
+  <label class="field" id="frSensWrap">
+    <span>Scene sensitivity <em id="frSensVal">0.30 &middot; lower finds more cuts</em></span>
+    <input id="frThreshold" type="range" min="0.05" max="0.7" step="0.01" value="0.3">
+  </label>
+
+  <div class="row">
+    <label class="field grow">
+      <span>Image format</span>
+      <select id="frFormat"><option value="png">PNG (lossless)</option><option value="jpg">JPG (smaller)</option></select>
+    </label>
+    <label class="field grow" id="frMinWrap">
+      <span>Ignore shots shorter than <em>seconds</em></span>
+      <input id="frMin" type="number" min="0" step="0.1" value="0.5">
+    </label>
+  </div>
+  <label class="check"><input type="checkbox" id="frCsv" checked> Also write a shot list (CSV with timecodes and frame numbers)</label>
+
+  <div class="row folder">
+    <label class="field grow"><span>Save to</span><input id="frOutDir" type="text" readonly></label>
+    <button id="frPickOut" class="ghost">Choose…</button>
+  </div>
+
+  <div class="actions">
+    <button id="frGo" class="primary">Extract frames</button>
+    <button id="frStop" class="ghost" hidden>Cancel</button>
+  </div>
+
+  <section id="frBox" hidden>
+    <div class="statusline"><span id="frItem">Starting…</span><span id="frPct"></span></div>
+    <div class="bar"><div id="frFill" class="fill"></div></div>
+    <div id="frStrip"></div>
+  </section>
+  <pre id="frLog" aria-live="polite"></pre>
+  <button id="frReveal" class="ghost" hidden>Show in Finder</button>
+</main>
+<main id="tab-pitch" hidden>
+  <div class="ytbar">
+    <div class="ytstatus"><span id="pAccount">Checking Pitch sign-in…</span><span class="ffsub">Needed for private decks and editor links (app.pitch.com/app/…). Public share links work without it.</span></div>
+    <div class="actions"><button id="pSignOut" class="ghost" hidden>Sign out</button><button id="pSignIn" class="ghost">Sign in to Pitch</button></div>
+  </div>
+
+  <label class="field">
+    <span>Pitch link</span>
+    <input id="pUrl" type="url" placeholder="https://pitch.com/v/… or https://app.pitch.com/app/presentation/…" spellcheck="false">
+  </label>
+  <div class="row">
+    <label class="field grow">
+      <span>Password <em>only for password-protected share links</em></span>
+      <input id="pPassword" type="password" placeholder="Leave empty if not protected" autocomplete="off" spellcheck="false">
+    </label>
+  </div>
+  <div class="row folder">
+    <label class="field grow"><span>Save to</span><input id="pOutDir" type="text" readonly></label>
+    <button id="pPick" class="ghost">Choose…</button>
+  </div>
+  <div class="actions">
+    <button id="pScan" class="primary">Find media</button>
+    <button id="pStop" class="ghost" hidden>Cancel</button>
+  </div>
+
+  <section id="pBox" hidden>
+    <div class="statusline"><span id="pStatus">Starting…</span><span id="pPct"></span></div>
+    <div class="bar"><div id="pFill" class="fill"></div></div>
+    <img id="pPeek" alt="What the deck shows right now" hidden>
+  </section>
+
+  <section id="pResults" hidden>
+    <div class="presbar">
+      <span id="pSummary"></span>
+      <span class="actions">
+        <label class="check"><input type="checkbox" id="pShowImg" checked> Images</label>
+        <label class="check"><input type="checkbox" id="pShowVid" checked> Videos</label>
+        <button id="pAll" class="ghost">Select all</button><button id="pNone" class="ghost">Select none</button>
+      </span>
+    </div>
+    <div id="pGrid"></div>
+    <div id="pEmbeds" hidden></div>
+    <div class="actions"><button id="pGo" class="primary">Download selected</button></div>
+  </section>
+  <pre id="pLog" aria-live="polite"></pre>
+  <button id="pReveal" class="ghost" hidden>Show in Finder</button>
+  <p class="legal">Only download media you own or have permission to use.</p>
+</main>
+<script src="renderer.js"></script>
+<script src="video.js"></script>
+<script src="frames.js"></script>
+<script src="pitch.js"></script>
+</body>
+</html>
