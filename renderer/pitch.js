@@ -112,6 +112,7 @@
     setBusy(true);
     const res = await window.bd.pitchScan({ url, password: $('pPassword').value });
     setBusy(false);
+    refreshAccount(); // opening the deck may have finished signing in
     if (res.ok) {
       $('pStatus').textContent = 'Done looking';
       $('pFill').style.width = '100%';
